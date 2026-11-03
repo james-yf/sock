@@ -1,0 +1,4 @@
+from pathlib import Path
+TILE_SIZE=16
+GAME_W=320
+GAME_H=320

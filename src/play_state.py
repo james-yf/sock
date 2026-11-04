@@ -13,9 +13,9 @@ grid=[
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
+      ['e', 's', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
-      ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
-      ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
+      ['e', 's', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
@@ -32,6 +32,11 @@ class PlayState(GameState):
     def __init__(self):
         self.player=Player(facing="down", assets=get_asset("player"))
         self.grid=grid
+        self.storage_tiles=[]
+        for ri, row in enumerate(self.grid):
+            for ci, col in enumerate(row):
+                if self.is_tile_storage((ri, ci)):
+                    self.storage_tiles.append((ri, ci))
         
     def handle_input(self, e):
         if e.type==pygame.KEYDOWN:
@@ -79,6 +84,10 @@ class PlayState(GameState):
         ri, ci=tile
         return self.grid[ri][ci]=='w'
 
+    def is_tile_storage(self, tile):
+        ri, ci=tile
+        return self.grid[ri][ci]=='s'
+
     def update(self, dt):
         pass
 
@@ -88,5 +97,7 @@ class PlayState(GameState):
             for ci, col in enumerate(row):
                 if col=='w':
                     pygame.draw.rect(surf, (0,0,255), ((ci*TILE_SIZE, ri*TILE_SIZE), (TILE_SIZE, TILE_SIZE)))
+                if (ri, ci) in self.storage_tiles:
+                    pygame.draw.circle(surf, (255,0,0), (ci*TILE_SIZE+TILE_SIZE//2, ri*TILE_SIZE+TILE_SIZE//2), TILE_SIZE//2)
                 if col=='p':
                     self.player.draw(surf, (ci*TILE_SIZE, ri*TILE_SIZE))

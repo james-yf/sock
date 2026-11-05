@@ -15,6 +15,11 @@ def load_assets():
         "down": extract_tile(player_sheet, 2),
         "up": extract_tile(player_sheet, 3)
     }
+    box_sheet=pygame.image.load(IMGS / "boxes.png").convert_alpha()
+    assets["box"]={
+        "at_empty": extract_tile(box_sheet, 0), 
+        "at_storage": extract_tile(box_sheet, 1)
+    } 
 
 def get_asset(name):
     return assets[name]

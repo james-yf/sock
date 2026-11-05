@@ -30,7 +30,8 @@ grid=[
 
 class PlayState(GameState):
     def __init__(self, switch_state):
-        self.player=Player(facing="down", assets=get_asset("player"))
+        self.start_direction="down"
+        self.player=Player(facing=self.start_direction, assets=get_asset("player"))
         self.box=get_asset("box")
         self.grid=[row[:] for row in grid]
         self.storage_tiles=[]
@@ -38,6 +39,7 @@ class PlayState(GameState):
             for ci, col in enumerate(row):
                 if self.is_tile_storage((ri, ci)):
                     self.storage_tiles.append((ri, ci))
+        self.move_history=[]
         self.switch_state=switch_state
         self.won=False
         self.win_timer=0.0
@@ -45,17 +47,29 @@ class PlayState(GameState):
     def handle_input(self, e):
         if e.type==pygame.KEYDOWN:
             if e.key==pygame.K_w or e.key==pygame.K_UP:
-                self.move_player_in_dir("up")
+                move=self.move_player_in_dir("up")
+                if move:
+                    self.move_history.append(move)
                 self.player.change_direction("up")
             if e.key==pygame.K_s or e.key==pygame.K_DOWN:
-                self.move_player_in_dir("down")
+                move=self.move_player_in_dir("down")
+                if move:
+                    self.move_history.append(move)
                 self.player.change_direction("down")
             if e.key==pygame.K_a or e.key==pygame.K_LEFT:
-                self.move_player_in_dir("left")
+                move=self.move_player_in_dir("left")
+                if move:
+                    self.move_history.append(move)
                 self.player.change_direction("left")
             if e.key==pygame.K_d or e.key==pygame.K_RIGHT:
-                self.move_player_in_dir("right")
+                move=self.move_player_in_dir("right")
+                if move:
+                    self.move_history.append(move)
                 self.player.change_direction("right")
+            if e.key==pygame.K_u:
+                if not self.move_history:
+                    return
+                self.undo_move()
 
     def player_tile(self):
         for ri, row in enumerate(self.grid):
@@ -84,16 +98,22 @@ class PlayState(GameState):
         else            : off_row, off_col = (  0,   1) 
         new_row, new_col=(player_row+off_row, player_col+off_col)
         
-        if self.is_tile_wall((new_row, new_col)):
-            return
+        if self.is_tile_wall((new_row, new_col)): 
+            return None
+
+        box_move=None
         if self.is_tile_box((new_row, new_col)):
             adj_tile=(new_row+off_row, new_col+off_col)
             if self.is_tile_wall(adj_tile) or self.is_tile_box(adj_tile):
-                return
+                return None
             self.grid[adj_tile[0]][adj_tile[1]]='b'
+            box_move=((new_row, new_col), adj_tile) 
 
         self.grid[player_row][player_col]='e'
         self.grid[new_row][new_col]='p'
+        player_move=((player_row, player_col), (new_row, new_col))
+
+        return (player_move, box_move) 
 
     def is_game_won(self):
         for tile in self.storage_tiles:
@@ -101,6 +121,44 @@ class PlayState(GameState):
             if self.grid[ri][ci]!='b':
                 return False
         return True
+
+    def undo_move(self):
+        player_move, box_move=self.move_history.pop()
+
+        (player_src_row, player_src_col), (player_dest_row, player_dest_col)=player_move
+        if not self.move_history:
+            # maintain start direction for first move
+            d=self.start_direction
+        else:
+            if player_dest_row-player_src_row==1:
+                d_of_move="down"
+                d_opp="up"
+            elif player_dest_row-player_src_row==(-1):
+                d_of_move="up"
+                d_opp="down"
+            elif player_dest_col-player_src_col==1:
+                d_of_move="right"
+                d_opp="left"
+            else:
+                d_of_move="left"
+                d_opp="right"
+            # assume no box_move has been made atp, so 
+            # fine to travel in the opposition direction.
+            d=d_opp
+
+        self.grid[player_src_row][player_src_col]='p'
+        self.grid[player_dest_row][player_dest_col]='e'
+
+        if box_move:
+            (box_src_row, box_src_col), (box_dest_row, box_dest_col)=box_move
+            self.grid[box_src_row][box_src_col]='b'
+            self.grid[box_dest_row][box_dest_col]='e'
+            # box move is confirmed, so reset direction to travel direction. this is to make it
+            # appear the player is pulling the box backwards, rather than moving away from it and
+            # having it magically move.
+            d=d_of_move
+
+        self.player.change_direction(d)
 
     def update(self, dt):
         if self.won:

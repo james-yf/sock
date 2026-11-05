@@ -2,6 +2,7 @@ import sys
 import pygame
 from consts import GAME_W, GAME_H
 from play_state import PlayState
+from win_state import WinState
 from assets import load_assets
 
 SCALE_FACTOR=2
@@ -14,10 +15,11 @@ class Game:
         self.screen=pygame.display.set_mode((GAME_W*SCALE_FACTOR, GAME_H*SCALE_FACTOR), vsync=1)
         load_assets()
         self.running=True
-        self.state=PlayState()
+        self.state=PlayState(self.switch_state)
 
     def switch_state(self, state):
-        pass
+        if state=="win": self.state=WinState(self.switch_state)
+        if state=="play": self.state=PlayState(self.switch_state)
 
     def run(self):
         while self.running:

@@ -12,7 +12,7 @@ grid=[
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'b', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
-      ['e', 'e', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
+      ['e', 'b', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 's', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 'e', 'w', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
       ['e', 's', 'e', 'e', 'w', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'],
@@ -29,15 +29,18 @@ grid=[
 ]
 
 class PlayState(GameState):
-    def __init__(self):
+    def __init__(self, switch_state):
         self.player=Player(facing="down", assets=get_asset("player"))
         self.box=get_asset("box")
-        self.grid=grid
+        self.grid=[row[:] for row in grid]
         self.storage_tiles=[]
         for ri, row in enumerate(self.grid):
             for ci, col in enumerate(row):
                 if self.is_tile_storage((ri, ci)):
                     self.storage_tiles.append((ri, ci))
+        self.switch_state=switch_state
+        self.won=False
+        self.win_timer=0.0
         
     def handle_input(self, e):
         if e.type==pygame.KEYDOWN:
@@ -92,8 +95,22 @@ class PlayState(GameState):
         self.grid[player_row][player_col]='e'
         self.grid[new_row][new_col]='p'
 
+    def is_game_won(self):
+        for tile in self.storage_tiles:
+            ri, ci=tile
+            if self.grid[ri][ci]!='b':
+                return False
+        return True
+
     def update(self, dt):
-        pass
+        if self.won:
+            self.win_timer-=dt
+            if self.win_timer<=0:
+                self.switch_state("win")
+        else:
+            if self.is_game_won():
+                self.won=True
+                self.win_timer=0.5
 
     def draw(self, surf):
         surf.fill((0,0,0))

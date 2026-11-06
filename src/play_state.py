@@ -43,6 +43,7 @@ class PlayState(GameState):
         self.switch_state=switch_state
         self.won=False
         self.win_timer=0.0
+        self.rewinding=False
         
     def handle_input(self, e):
         if e.type==pygame.KEYDOWN:
@@ -70,6 +71,8 @@ class PlayState(GameState):
                 if not self.move_history:
                     return
                 self.undo_move()
+            if e.key==pygame.K_r:
+                self.rewinding=True
 
     def player_tile(self):
         for ri, row in enumerate(self.grid):
@@ -161,6 +164,12 @@ class PlayState(GameState):
         self.player.change_direction(d)
 
     def update(self, dt):
+        if self.rewinding:
+            if not self.move_history:
+                self.rewinding=False
+                return
+            self.undo_move()
+
         if self.won:
             self.win_timer-=dt
             if self.win_timer<=0:

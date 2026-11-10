@@ -12,6 +12,7 @@ class Game:
         self.surf=pygame.Surface((GAME_W, GAME_H))
         self.clock=pygame.time.Clock()
         self.screen=pygame.display.set_mode((GAME_W*SCALE_FACTOR, GAME_H*SCALE_FACTOR), vsync=1)
+        pygame.display.set_caption("SOCK")
         load_assets()
         self.running=True
         self.levels=self.load_levels()

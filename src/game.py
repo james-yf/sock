@@ -1,11 +1,10 @@
 import sys 
 import pygame
-from consts import GAME_W, GAME_H
+from consts import GAME_W, GAME_H, SCALE_FACTOR
 from play_state import PlayState
 from win_state import WinState
+from edit_state import EditState
 from assets import load_assets
-
-SCALE_FACTOR=2
 
 class Game:
     def __init__(self):
@@ -15,11 +14,35 @@ class Game:
         self.screen=pygame.display.set_mode((GAME_W*SCALE_FACTOR, GAME_H*SCALE_FACTOR), vsync=1)
         load_assets()
         self.running=True
-        self.state=PlayState(self.switch_state)
+        self.levels=self.load_levels()
+        self.curr_level_index=0
+        self.state=PlayState(self.levels[self.curr_level_index], self.switch_state)
+
+    def load_levels(self):
+        levels=[]
+        with open("levels.txt", 'r') as file:
+            level=[]
+            for line in file:
+                line=line.strip()
+                if line=='{':
+                    continue
+                if line=='}':
+                    levels.append(level)
+                    level=[]
+                    continue
+                level.append(line)
+        return levels
 
     def switch_state(self, state):
+        if state=="next_level":
+            if self.curr_level_index==len(self.levels)-1:
+                self.curr_level_index=0
+            else:
+                self.curr_level_index+=1
+            self.state=PlayState(self.levels[self.curr_level_index], self.switch_state)
         if state=="win": self.state=WinState(self.switch_state)
-        if state=="play": self.state=PlayState(self.switch_state)
+        if state=="play": self.state=PlayState(self.levels[self.curr_level_index], self.switch_state)
+        if state=="edit": self.state=EditState(self.switch_state)
 
     def run(self):
         while self.running:
